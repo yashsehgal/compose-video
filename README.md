@@ -7,19 +7,34 @@ You changed a component on your branch. These skills let your agent make a 4K vi
 ## Install
 
 ```bash
-npx skills@latest add yashsehgal/compose-video
+npx git+ssh://git@github.com/yashsehgal/compose-video.git
 ```
 
-Or by hand:
+This installs all five skills into `~/.claude/skills/`. Start a new Claude Code session to pick them up.
+
+> This repo is private. npx clones it over SSH, so you need access to the repo and an SSH key added to your GitHub account (check with `ssh -T git@github.com`).
+
+| Option | Does |
+| --- | --- |
+| `--project` | installs into `./.claude/skills` for this project only |
+| `--skill <name>` | installs only that skill; repeat it for more |
+| `--force` | replaces skills you already have; use it to update |
+| `--list` | lists the skills and installs nothing |
+
+```bash
+# Update to the latest version
+npx git+ssh://git@github.com/yashsehgal/compose-video.git --force
+
+# Only the audit skill, for this project
+npx git+ssh://git@github.com/yashsehgal/compose-video.git --project --skill compose-audit
+```
+
+Without npx:
 
 ```bash
 git clone git@github.com:yashsehgal/compose-video.git
 cp -R compose-video/skills/* ~/.claude/skills/
 ```
-
-Start a new Claude Code session to pick them up.
-
-> This repo is private. Both install methods need your GitHub account to have access to it.
 
 ## Why use it?
 
