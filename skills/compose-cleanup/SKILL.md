@@ -1,48 +1,83 @@
 ---
 name: compose-cleanup
-description: Remove scenes, steps, labels or effects from a Remotion component breakdown video cleanly, and tidy the project afterwards: dead state, orphaned notes and sounds, stale assets and old renders. Use when asked to cut, drop or simplify part of a demo video, shorten it, remove headings or process scenes, or clean up a Remotion demo project.
+description: Remove scenes, steps, labels or effects from a Remotion component breakdown video cleanly, and tidy the project afterwards (dead state, orphaned notes and sounds, stale stills and renders). Use when asked to cut, drop or simplify part of a demo video, shorten it, remove headings or process scenes, or clean up a Remotion demo project.
 ---
 
 # Compose: clean up
 
-A beat in a breakdown video touches up to six places: the timeline, the state, the layout, the component, the notes and the sound cues. Removing it from only some of them leaves invisible state, a stray note, or a sound with no picture.
+## Initial Response
 
-## Removing a beat or scene
+When this skill is first invoked without a specific request, respond only with:
 
-Work through every place, in this order:
+> I'm ready to cut or tidy. Tell me what to remove from which video, or say "tidy" to clean the project.
 
-1. **Timeline:** delete the beat from `T`. Shift every later beat back by the removed length so the rhythm stays intact, and lower `DURATION_S` by the same amount (compose-timing). Include hard-coded stage times that escaped `T`.
+Do not provide any other information until the user asks.
+
+A subtraction skill. It does ONE thing: take a beat, scene or effect out of a video so that nothing of it is left: no state, note, sound or gap. It does not redesign what remains (that's `compose-animate`) or re-pace it beyond closing the gap (`compose-timing`).
+
+## Operating Posture
+
+A beat lives in up to six places: the timeline, the state, the layout and component, the notes, the sound cues, and the measured text. Removing it from some of them leaves invisible state, a note pointing at nothing, or a sound with no picture. Done means a search for its name finds nothing.
+
+## Hard Rules
+
+1. **Remove from every place, in order** (the sequence below). Never stop when the picture looks right.
+2. **Close the gap.** Shift every later beat back by the removed length, and shorten `DURATION_S` by the same amount.
+3. **Parts that must still leave fold into a neighbour.** When a removed step was the only exit for some parts (buttons), fade them out together as the neighbouring step starts, with no note and one sound.
+4. **Type errors after a removal are leftovers.** Delete what they point at; never cast them away.
+5. **Never remove shared code** from `src/compose/` because one video stopped using it. Check other videos' imports first.
+6. **Delete files by exact path.** Never a glob after a `cd` in the same command: a wrong working directory turns it into a removal somewhere else.
+7. **Keep every version the user asked to keep.** Only superseded working renders from the current iteration may be deleted.
+
+## The Sequence
+
+### Removing a beat
+
+1. **Timeline:** delete the beat from `T` and shift later beats (`compose-timing` § Retiming). Include stage times that escaped `T`.
 2. **State:** delete the beat's values from `state.ts`.
-3. **Layout and component:** delete every use of those values. If the beat's parts must still leave the frame, fold their exit into the neighbouring step (fade them together as that step starts) instead of keeping their own beat.
-4. **Notes:** delete the beat's note, plus any cursor or helper only it used.
-5. **Sounds:** delete its cues from `SoundCues.tsx` and its generators from the sound script, then regenerate the sounds.
-6. **Text specs:** delete strings from the measured `TEXT` that nothing renders any more.
-7. **Files:** delete components and data modules only the beat used (a process panel, a commit snapshot).
+3. **Layout and component:** delete every use of those values. Apply Hard Rule 3 for parts that still have to leave.
+4. **Notes:** delete the beat's note, and any cursor, helper or position only it used.
+5. **Sounds:** delete its cues from `SoundCues.tsx` and its `move()` entries from the sound script. Regenerate.
+6. **Measured text:** delete `TEXT` entries nothing renders any more.
+7. **Files:** delete components and data modules only the beat used.
+8. **Comments:** fix any that still count or describe the removed beat ("six changes").
 
-Then:
+Then all three must come back clean:
 
 ```bash
 npx tsc --noEmit
 grep -rnE '<removedName>|<removedField>' src/<video>
+grep -rn "<removedSound>" src/<video> scripts/make-<video>-sounds.mjs
 ```
 
-Both must come back empty. Type errors after a removal are leftovers, never something to cast away.
+### What to cut when asked to simplify
 
-## What to cut when asked to simplify
+| On screen | Action |
+| --- | --- |
+| Titles, step counters, kickers, subtitles | Cut entirely |
+| Process scenes (plans, commits, history) | Cut entirely, including their data files |
+| A step that only removes minor controls | Fold into a neighbour (Hard Rule 3) |
+| Subtitles under "Before"/"After" | Cut; keep the handwritten word |
+| A hover cursor that demonstrates a click | Cut along with its step |
 
-- Header titles, step counters, kickers and subtitles: cut entirely. The component alone carries the video.
-- Process scenes (plans, commit lists, history): cut entirely. They aren't design.
-- Steps that only remove minor controls: fold them into a neighbouring step as above.
-- Subtitles under "Before"/"After": cut, keep the handwritten word.
+### Tidying the project
 
-## Tidying the project
+| What | Rule |
+| --- | --- |
+| `out/stills/<id>/` | Delete by full path once its review is done |
+| Renders | Keep named versions; delete superseded working renders by exact file name |
+| `public/sfx-<video>/` | Rebuilt by its own script; never hand-edit another video's folder |
+| `src/compose/` exports | Remove only after `grep -rn <export> src` finds no importer |
 
-- **Stills:** compose-audit writes to `out/stills/`. Delete a video's stills folder by its full path once the review is done. Never use a glob after `cd` in the same command; a wrong working directory turns it into a removal somewhere else.
-- **Renders:** keep every version the user asked to keep. Delete only working renders that were superseded within one iteration, and only by exact file name.
-- **Sounds:** `writeSounds` rebuilds the video's own folder; never hand-delete files from another video's `public/sfx-*`.
-- **Shared code:** never remove an export from `src/compose/` because one video stopped using it; another video may still import it. `grep -rn <export> src` first.
-- **Dead comments:** update comments that still describe a removed beat ("six changes" after one was cut).
+## Required Output
 
-## Before handing back
+End with a list of every place touched, one line each (`timeline.ts: removed controls, shifted 8.1s`), the new duration, and the result of the three checks. Then run `compose-audit` with stills at the seam where the beat was removed: that's where a missing exit or a double sound shows.
 
-Run compose-audit on the new cut, with stills at the seam where the beat was removed. That's where a missing exit or a double sound shows.
+## Invocation Variants
+
+| Invocation | Behavior |
+| --- | --- |
+| bare | Initial Response, then wait |
+| a beat or element ("drop the Review step") | Removing a beat, steps 1–8 |
+| `simplify` | Apply the cut table to the current video, then list what was cut |
+| `tidy` | Tidying the project only; touch no composition code |

@@ -1,161 +1,154 @@
 # compose-video
 
-Five Claude Code skills for making **component breakdown videos** with [Remotion](https://www.remotion.dev): one real UI component, walked from its old design to its new one, a change at a time. Hand-drawn notes explain each change, synthesized sound sits under each move, and the video ends on a before/after comparison.
+Skills for turning a component's redesign into a short film.
 
-Each skill handles one stage, so the agent loads only the rules it needs:
+You changed a component on your branch. These skills let your agent make a 4K video of that change. It shows the real component going from its old design to its new one, one change at a time. Each change gets a hand-drawn note, a soft sound plays under each move, and the video ends on a before/after comparison. Built on [Remotion](https://www.remotion.dev).
 
-| Skill | Stage | Use it when you want to… |
-|---|---|---|
-| [`compose-animate`](skills/compose-animate/SKILL.md) | Picture | build the video: the component, its morphs, the notes and the before/after close |
-| [`compose-timing`](skills/compose-timing/SKILL.md) | Pacing and sync | set up the timeline, retime beats, keep notes readable, line sounds up with frames |
-| [`compose-sounds`](skills/compose-sounds/SKILL.md) | Sound | add a "with sound" cut, with effects sized to each change |
-| [`compose-cleanup`](skills/compose-cleanup/SKILL.md) | Cutting | remove a step, scene or label cleanly, and tidy the project afterwards |
-| [`compose-audit`](skills/compose-audit/SKILL.md) | Review | check a render: contact sheets, layout stability, fidelity, 4K, audio levels |
+## Install
 
-## What you get
+```bash
+npx skills@latest add yashsehgal/compose-video
+```
 
-- **The component, nothing else.** No title cards or step counters: just the component, centred and wide, morphing in place.
-- **No layout shift.** Every part is one persistent element placed by a pure function of the frame, and text is measured before the first frame, so nothing jumps.
-- **One motion language.** Parts leave over 0.75s, easing in and out with a blur and a slight shrink. They arrive over 0.6s, easing out. Moves take 1.0–1.3s. No springs.
-- **Readable notes.** Notes are written in marker by hand, and each one stays up at least 3s after it finishes writing.
-- **Real copy.** Labels, status text and tokens come from the component's source on both git refs.
-- **Sound that matches the picture.** Every effect is synthesized from a seeded source, shaped by the easing of its move, and sized by how far and how visibly the part travels.
-- **4K output.** Frames are laid out at 1920×1080 and rendered at 3840×2160, 60fps.
-
-## Requirements
-
-- [Claude Code](https://claude.com/claude-code)
-- Node.js 23.6 or later (the sound generator imports `.ts` files directly; on Node 22.6+ add `--experimental-strip-types`)
-- A Remotion v4 project with `remotion`, `@remotion/cli`, `@remotion/google-fonts` and `@remotion/paths`
-- `ffmpeg` and `ffprobe` on your `PATH` (for contact sheets and audio checks)
-- Git, with the component's old and new designs on two refs (for example `origin/dev` and your branch)
-
-## Setup
-
-### 1. Install the skills
-
-For all your projects:
+Or by hand:
 
 ```bash
 git clone git@github.com:yashsehgal/compose-video.git
-```
-
-```bash
 cp -R compose-video/skills/* ~/.claude/skills/
 ```
 
-For one project only, copy them into that project's `.claude/skills/` instead. Restart Claude Code, or start a new session, to pick them up.
+Start a new Claude Code session to pick them up.
 
-### 2. Start a Remotion project (if you don't have one)
+> This repo is private. Both install methods need your GitHub account to have access to it.
 
-```bash
-npx create-video@latest
-```
+## Why use it?
 
-```bash
-npm i @remotion/google-fonts @remotion/paths
-```
+**Agents don't know what a good design demo looks like.**
 
-### 3. Let the skills copy their assets
+Ask an agent for a video of a redesign and you get slides: a title card, "Step 1 of 6", a list of commits, then a component that jumps between states. The changes are hard to see and the notes vanish before you can read them.
 
-The first time you ask for a video, `compose-animate` copies its shared code into the project, and `compose-sounds` does the same for sound:
+These skills encode the decisions behind a demo people actually watch:
+
+- **Show, don't explain:** only the component is on screen.
+- **No layout shift:** every part is one persistent element, and text is measured before the first frame.
+- **One motion language:** parts leave over 0.75s, easing in and out with a blur, and arrive over 0.6s, easing out. There are no springs.
+- **Readable notes:** each note stays up at least 3 seconds after it finishes writing.
+- **The product's own words:** copy and tokens are read from the source on both git refs.
+- **Sound sized to the change:** a 4px padding nudge is a whisper; a card collapsing is a full breath.
+
+Each rule comes from a real review of a real video.
+
+## Reference
+
+- **[compose-animate](./skills/compose-animate/SKILL.md):** builds the video. It reads the component on both refs, picks 5–6 changes, morphs one into the other without layout shift, writes the notes and closes on before/after. Includes [SETUP.md](./skills/compose-animate/SETUP.md) and [RECIPES.md](./skills/compose-animate/RECIPES.md).
+- **[compose-timing](./skills/compose-timing/SKILL.md):** paces the video and keeps it in sync. It owns the timeline, so motion, notes and sounds stay on one clock, and it fixes notes that leave too soon and sounds that land early.
+- **[compose-sounds](./skills/compose-sounds/SKILL.md):** adds a "with sound" cut. Every sound is synthesized, shaped by its move's easing and sized by how far and how visibly the part travels. Includes [CATALOG.md](./skills/compose-sounds/CATALOG.md).
+- **[compose-cleanup](./skills/compose-cleanup/SKILL.md):** takes a step, scene or label out cleanly, leaving no stray state, note, sound or gap. It also tidies stills and old renders.
+- **[compose-audit](./skills/compose-audit/SKILL.md):** reviews a render against ten strict standards using a contact sheet of stills, ends with a Ship or Block verdict, and names which skill fixes each finding. Includes [STANDARDS.md](./skills/compose-audit/STANDARDS.md).
+
+## Running it
+
+### Requirements
+
+| Tool | Version | Why |
+| --- | --- | --- |
+| Claude Code | latest | runs the skills |
+| Node.js | 23.6+ (or 22.6+ with `--experimental-strip-types`) | the sound generator imports `.ts` files directly |
+| Remotion | v4, with `@remotion/google-fonts` and `@remotion/paths` | renders the video |
+| ffmpeg, ffprobe | any recent version | contact sheets, resolution and audio checks |
+| git | — | the component's old and new designs on two refs |
+
+### First video, step by step
+
+1. **Open your Remotion project** in Claude Code, or start a new one with `npx create-video@latest`.
+2. **Ask for the video.** Name the component and the two refs:
+   ```
+   Make a breakdown video of src/components/ImportCard.tsx, origin/dev vs this branch.
+   ```
+   `compose-animate` copies its shared code into `src/compose/`, reads the component on both refs and lists the changes it picked. Then it builds the composition.
+3. **It paces and checks itself.** `compose-timing` lays out the beats and `compose-audit` reviews a contact sheet before you see the video.
+4. **Watch it**, either in `npx remotion studio` or as the render in `out/<video>-v1-4k.mp4`.
+5. **Give feedback in plain words.** The right skill picks it up (see the examples below).
+6. **Add sound** once the picture is right:
+   ```
+   Make a version with sound. Keep the silent one as it is.
+   ```
+
+### What gets added to your project
 
 ```
 remotion.config.ts            4K, near-lossless H.264
-src/compose/motion.ts         easing curves, progress(), mix(), visibleAt()
-src/compose/fade.ts           the one arrive/leave style
-src/compose/fonts.ts          variable Inter + the notes' hand
-src/compose/useTextWidths.ts  measures strings before frame 0
-src/compose/sketch/           HandNote, Callout, SketchStroke, shapes, ink
-scripts/sfx.mjs               sound generators + WAV writer
-scripts/stills.sh             contact sheets for review
+src/compose/                  shared by every video
+  motion.ts                   SOFT / IN_OUT curves, progress(), mix(), visibleAt()
+  fade.ts                     the one arrive/leave style
+  fonts.ts                    variable Inter + the notes' hand
+  useTextWidths.ts            string widths before frame 0
+  sketch/                     HandNote, Callout, SketchStroke, shapes, ink
+src/<video>/                  one folder per video
+  timeline.ts state.ts layout.ts tokens.ts <Component>.tsx notes/ SoundCues.tsx
+scripts/
+  sfx.mjs                     sound generators + WAV writer
+  make-<video>-sounds.mjs     this video's sounds
+  stills.sh                   contact sheets
+public/sfx-<video>/           this video's generated sounds
+out/                          renders: <video>-v<N>-4k.mp4, <video>-v<N>-4k-sound.mp4
 ```
 
-Every video in the project shares these files. Each video then gets its own `src/<video>/` folder and `public/sfx-<video>/` sound folder.
+## Examples
 
-## Use cases
+| You say | Skill | What happens |
+| --- | --- | --- |
+| "Make a breakdown video of the import card, dev vs this branch" | compose-animate | Reads both refs, lists 5–6 changes, builds the composition, renders v1 |
+| "Just plan it first" | compose-animate `plan` | Lists the changes and their order; writes no code |
+| "The notes disappear too fast" | compose-timing | Holds each note ≥3s once written, shifts later beats, regenerates the sounds |
+| "The badge sound comes in early" | compose-timing | Re-cues it at the fade's first visible frame |
+| "Make a version with sound" | compose-sounds | Adds `<Video>WithSound` and the sounds; the silent cut is untouched |
+| "Drop the step where Review is removed, it's tedious" | compose-cleanup | Removes the step everywhere, folds its exits into the next step, closes the gap |
+| "Remove the titles at the top" | compose-cleanup `simplify` | Cuts every heading, counter and subtitle |
+| "Change 1,200 accounts to 10k" | compose-animate | Updates every string that shows the count, then re-renders |
+| "Check it before I share it" | compose-audit | Contact sheet, fidelity spot-check, 4K and level checks, findings table, Ship or Block |
+| "Keep this version, make a new one with smoother exits" | compose-animate | Renders to `v2`; v1 files are never touched |
 
-- **Design review:** show a team what changed in a component on your branch and why, without anyone checking out the code.
-- **PR or changelog video:** attach a 60-second before/after walkthrough to a pull request or release note.
-- **Design system updates:** walk a component through new tokens (weights, spacing, radii) one at a time.
-- **Explaining a pattern:** show the steps that took a component from cluttered to clean, such as fewer controls, one row or a calmer type scale.
-
-## How to use
-
-Ask in plain words; the right skill loads from its description.
-
-```
-Make a breakdown video of the AccountCreationPreviewCard: dev vs this branch.
-```
-
-```
-The notes disappear too fast, keep each one up longer.
-```
+### A sample audit
 
 ```
-Make a version with sound. Keep the silent one as it is.
-```
+| At    | Standard           | Finding                                     | Fix                          | Owner           |
+| ----- | ------------------ | ------------------------------------------- | ---------------------------- | --------------- |
+| 21.8s | 6 Readable notes   | Note written at 21.4s, erased at 21.6s      | Erase ≥24.4s, shift later    | compose-timing  |
+| 38.6s | 3 No shift         | Badge jumps 6px when the title changes      | Follow measured widths       | compose-animate |
 
-```
-Drop the step where the Review button is removed, it's tedious.
-```
+Checked: 14 stills, 6 fidelity samples, 3840×2160 60fps 65.0s, −16.8 / −46.3 dB
+Unchecked: full playback
 
-```
-Check the latest render before I share it.
-```
-
-A typical run:
-
-1. **compose-animate** reads the component on both refs, picks 5–6 visible changes and builds the composition.
-2. **compose-timing** paces it: about 7–8s per step, with every note held at least 3s.
-3. **compose-audit** renders a contact sheet and checks it before you see anything.
-4. You give feedback. **compose-cleanup** removes what you cut, **compose-timing** retimes it, and **compose-animate** changes the rest.
-5. **compose-sounds** adds the sound cut, and **compose-audit** checks the levels and the 4K output.
-
-## Guidelines
-
-Every skill enforces these rules:
-
-- **Only the component on screen.** Headings, counters and process scenes pull the eye off it.
-- **5–6 changes at most.** Removing a minor control is never a step of its own; it folds into a neighbouring step.
-- **Real copy and tokens.** Strings and values come from the source. Your own data, such as "10k accounts", is used everywhere you ask.
-- **Notes are readable.** At most 8 words, written about 1.2s after the change starts, held at least 3s, and erased about 1s before the next change.
-- **Exits dissolve.** They ease in and out over 0.75s with a blur and a slight shrink, and are never cut.
-- **One timeline.** The picture, notes and sounds all read one `timeline.ts`, in seconds.
-- **Keep the versions you asked for.** Renders are named `<video>-v<N>-4k.mp4`, and a kept version is never overwritten.
-- **Show the proof.** Checks happen on stills and with `ffprobe`. The agent tells you what it did and didn't watch.
-
-## Repository layout
-
-```
-skills/
-  compose-animate/   SKILL.md, assets/ (motion, fade, fonts, text widths, sketch, config)
-  compose-timing/    SKILL.md, assets/timeline.template.ts
-  compose-sounds/    SKILL.md, assets/ (sfx.mjs, sound script and cue templates)
-  compose-cleanup/   SKILL.md
-  compose-audit/     SKILL.md, assets/stills.sh
+Verdict: Block (Standards 3, 6)
 ```
 
 ## Troubleshooting
 
 | Symptom | Fix |
-|---|---|
+| --- | --- |
 | `Timeout (30000ms) exceeded … Fetching … font` | Render with `--timeout=120000`. Google Fonts can be slow headlessly. |
 | `Cannot use frame N … highest frame is N-1` | The last frame is `DURATION_S × fps − 1`. |
-| Sound script fails on `import … .ts` | Use Node 23.6+, or run it with `node --experimental-strip-types`. |
+| The sound script fails on `import … .ts` | Use Node 23.6+, or run it with `node --experimental-strip-types`. |
 | Another video lost its sounds | Each video needs its own `public/sfx-<video>/`. `writeSounds` empties its folder first. |
-| A badge jumps when the title changes | Place it from the measured title widths mixed by the crossfade, not from the DOM. |
+| A badge jumps when the title changes | Place it from measured title widths mixed by the crossfade (RECIPES.md § Text that other parts follow). |
+| A note wobbles while the card moves | Place notes from the layout at the note's start time, not the current frame. |
 
-## Writing and changing the skills
+## Contributing to the skills
 
-The skills follow the structure taught in [How to write good skills](https://aiforui.dev/learn/how-to-write-good-skills):
-- Each skill is strict and states its numbers.
-- Each skill explains why its rules exist.
-- Each skill has one focus.
-- Decisions are written as trees.
+The skills follow [How to write good skills](https://aiforui.dev/learn/how-to-write-good-skills):
+- Rules are strict and give their numbers.
+- Every rule says why.
+- Each skill does one thing.
+- Decisions are written as trees and tables.
 - Every line changes what the agent does.
 
-Keep it that way when editing:
-- Replace soft words ("reasonable", "tasteful") with numbers.
-- Give every rule its reason.
-- Put a new stage in its own skill rather than growing an existing one.
+Each `SKILL.md` has the same sections:
+- **Initial Response**
+- **Scope**, naming the sibling skill for everything else
+- **Operating Posture**
+- **Hard Rules**
+- **The Sequence**
+- **Invocation Variants**
+
+Precise values and long examples live in an uppercase file next to it: `SETUP.md`, `RECIPES.md`, `CATALOG.md` or `STANDARDS.md`.

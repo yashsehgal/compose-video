@@ -1,88 +1,119 @@
 ---
 name: compose-animate
-description: Build the picture of a Remotion component breakdown video, where a UI component morphs from its old design to its new one step by step, with hand-drawn notes and a before/after close. Use when asked to make a design demo, component breakdown, redesign walkthrough or before/after video, or to add a composition to a Remotion demo project. Timing rules live in compose-timing, sound in compose-sounds, removing beats in compose-cleanup, checking renders in compose-audit.
+description: Build a Remotion component breakdown video, where one real UI component morphs from its old design to its new one a change at a time, with hand-drawn notes and a before/after close. Reads the component on both git refs and writes the composition. Use when asked to make a design demo, component breakdown, redesign walkthrough or before/after video. For pacing use compose-timing; for sound use compose-sounds; for cutting beats use compose-cleanup; for checking a render use compose-audit.
 ---
 
 # Compose: animate
 
-A component breakdown video shows one real UI component changing from its old design (usually the base branch) to its new one, one design change at a time. The viewer watches the component, not slides about it.
+## Initial Response
 
-## Set up once per project
+When this skill is first invoked without a specific request, respond only with:
 
-Copy this skill's `assets/` into the Remotion project:
+> I'm ready to turn a component's redesign into a breakdown video. Tell me the component and the two refs to compare (for example `origin/dev` and this branch).
 
-| Asset | Copy to | What it is |
-|---|---|---|
-| `motion.ts` | `src/compose/motion.ts` | `SOFT`/`IN_OUT` curves, `progress()`, `mix()`, `visibleAt()` |
-| `fade.ts` | `src/compose/fade.ts` | the one arrive/leave style for every part |
-| `fonts.ts` | `src/compose/fonts.ts` | variable Inter and the notes' hand |
-| `useTextWidths.ts` | `src/compose/useTextWidths.ts` | measures strings before frame 0 |
-| `sketch/*` | `src/compose/sketch/` | `HandNote`, `Callout`, `SketchStroke`, `shapes`, `ink` |
-| `remotion.config.ts` | project root | 4K, near-lossless H.264 |
+Do not provide any other information until the user asks.
 
-Dependencies: `remotion`, `@remotion/cli`, `@remotion/google-fonts`, `@remotion/paths` (v4). Never fork `src/compose/` per video: every video in the project shares it, and a per-video copy drifts.
+A construction skill. It does ONE thing: turn a component's redesign into a Remotion composition that would pass `compose-audit` the first time. It does not pace beats in detail (that's `compose-timing`), add sound (`compose-sounds`), remove beats (`compose-cleanup`) or review renders (`compose-audit`).
 
-Each video lives in `src/<video>/` with `timeline.ts`, `state.ts`, `layout.ts`, `tokens.ts`, the component, `notes/`, and the composition file.
+## Operating Posture
 
-## Before writing code
+You are a design engineer making a short film about one component. The viewer watches the component change and reads one note about each change. Nothing else is on screen.
 
-1. **Read the real component on both refs.** `git show <base>:<path>`, `git diff <base>...HEAD -- <path>`, and the commit log. Resolve every size, colour, weight and radius to px and hex from the design tokens into `tokens.ts`. Take every label, title and status string from the source. Why: reviewers recognise the product's own copy; an invented string reads as a different product.
-2. **Pick 5–6 design changes, never more.** Group commits into visible changes. A change that only removes a minor control (a dismiss or secondary button) is not a step: fold it silently into the related step (the buttons fade as the footer folds away). Why: removal steps are tedious to watch and were cut in review.
-3. **Order steps so each morph changes one thing.** When two changes touch one element, the one that changes its shape goes last.
-4. **Use the user's data.** If they give a count or copy ("10k accounts"), use it everywhere, formatted the way the product formats numbers.
+Two failure modes, and the first is worse:
 
-## Stage
+1. **Something moves that the design change didn't move.** A jump, a re-centre, a badge that snaps when the title changes. It reads as a bug in the product.
+2. **The video explains instead of showing.** Title cards, step counters, process scenes, commit lists. They pull the eye off the component and were cut in every review.
 
-- 1920×1080 at 60fps, `Config.setScale(2)` (from `remotion.config.ts`), so frames rasterise at 3840×2160. Never upscale a 1080p render.
-- **Only the component, centred.** No title cards, step headings, step counters, kickers, process screens, plans or commit lists. They pull the eye off the component.
-- **Wide and modest:** the component covers ~85% of the frame width (e.g. 680px wide at 2.4×). A narrow component at 3× reads as cramped. If the real one is narrower, widen its container, never its scale.
-- One fixed width for the whole video. Height changes only through tweened values, and the component is re-centred from the tweened height (`top = cy - height * scale / 2`).
+Make the calls yourself: which changes, in which order, at which scale. State each call in one line and build it.
 
-## No layout shift, ever
+## Hard Rules
 
-- Every part is one absolutely positioned element that lives for the whole video, placed by a pure function of the frame. Never mount a different element for the new version of a part: a swap jumps.
-- `state.ts` turns the frame into plain 0→1 numbers, one per change (`state(frame, fps)`). `layout.ts` mixes old→new geometry by them (`layout(state, widths)`). The component and the notes both read `layout`, so arrows always land on their target.
-- Measure every string with `useTextWidths` before frame 0. Anything placed after text (a badge after a title) uses the measured widths mixed by the crossfade weights, so it glides when the text changes.
-- Tween font-weight on the variable font (`INTER_VAR`) instead of swapping weights.
-- Draw the component at 1x CSS sizes inside a wrapper with `transform: scale(SCALE)`, `transform-origin: 0 0`. Why: every token stays in its real px and one number sets the size on the frame.
+1. **Real source only.** Every token, label, title and status string comes from the component's code on the two refs, or from data the user gives. Never invent copy.
+2. **5–6 design changes, never more.** A change that only removes a minor control (a dismiss or secondary button) is never its own step: its parts fade out as the neighbouring step starts.
+3. **Only the component and hand-drawn notes on screen.** No headings, counters, kickers, subtitles or process scenes.
+4. **One persistent element per part,** placed by a pure function of the frame. Never mount a different element for the new version of a part.
+5. **One width for the whole video,** covering ~85% of the frame. Height only tweens, and the component re-centres from the tweened height.
+6. **No `spring()`.** Springs overshoot, and an overshoot reads as a layout shift.
+7. **Never fork the shared code** in `src/compose/` per video. Every video in the project imports it.
+8. **4K out, versions kept.** `Config.setScale(2)`. Renders are named `<video>-v<N>-4k.mp4`; a version the user asked to keep is never overwritten.
 
-## Motion decision tree
+## The Build Sequence
 
-```
-Is the part leaving?
-├── Yes → 0.75s, ease-in-out (IN_OUT): fade(1 - t)
-└── No
-    ├── Arriving? → 0.6s, ease-out (SOFT): fade(t)
-    ├── Swapping in place (a title, a label)? → crossfade 0.6s, IN_OUT
-    ├── Moving or resizing? → 1.0–1.3s, IN_OUT
-    └── Constant (a spinner, a shimmer)? → linear, from the frame clock
+### 1. Set up the project (first video only)
+
+Follow [SETUP.md](SETUP.md): copy the assets into `src/compose/`, install the four Remotion packages, and register the composition.
+
+### 2. Read the component on both refs
+
+```bash
+git log --oneline <base>..HEAD -- <component dir>
+git show <base>:<component file>
+git diff <base>...HEAD -- <component dir>
 ```
 
-- Never leave on an ease-out curve: it is fastest on its first frame, so the part blinks off. IN_OUT dissolves it.
-- `fade()` scales to 0.97 and blurs 2.5px as a part goes, never to 0. A part shrinking to nothing reads as a bug.
-- When a part fades and its space closes, fade first and close 0.25s later. Closing over visible text clips it.
-- Scale text from its first letter (`origin: "left center"`) so it doesn't drift sideways while it fades.
-- Never use `spring()`. Springs overshoot, and an overshoot reads as a layout shift in a design demo.
+Write `src/<video>/tokens.ts`: every colour as hex, every size, radius and weight as 1x px, resolved from the design tokens (CSS variables, Tailwind config). Copy the exact strings the component renders in each state.
 
-## States that only exist in motion
+### 3. Pick and order the changes
 
-- **Progress or status text:** crossfade through the product's real stage strings, ~1.4s each, with its shimmer. Show them while the step's note explains them, then return to the resting title.
-- **Hover-only UI:** show it, and say "shown on hover" in the note.
-- **The finished flow:** after the last change, run the new component once through its real flow (working → done), then settle it back to the resting state for the close.
+Group the commits into visible changes: type, rows, controls, imagery, spacing. Keep 5–6. Order them so each morph changes one thing; when two changes touch one element, the one that changes its shape goes last.
 
-## Hand-drawn notes
+State the list to the user in one line per change before building.
 
-- `HandNote` and `Callout` from `src/compose/sketch`, in the `INK` colour. They are the only text outside the component.
-- One note per step, ≤8 words, naming the change in the reviewer's terms ("350 font-weight, the count at 400"). Use the user's exact wording when they give it.
-- Place each note from the layout at the moment the note starts, never from the current frame: a note that follows a moving part wobbles.
-- Spacing: a line with end ticks over the gap (`SketchStroke`) and the px value written beside it.
+### 4. Build state and layout
 
-## The close: before and after
+- `state.ts`: `state(frame, fps)` returns one 0→1 number per change, from `progress()` with the curve from step 5.
+- `layout.ts`: `layout(state, widths)` mixes old→new geometry by those numbers and returns every position and size the component and notes need.
+- Measure every string with `useTextWidths` before frame 0.
 
-End on both designs stacked, old above new, in the **same state** with the same data. "Before" and "After" are handwritten (`HandNote`, ~46px) and left-aligned with the cards, with no subtitles. The new component glides down into the "After" place while the old one fades in above. Why: it is the frame people screenshot, so it must compare like with like.
+Patterns: [RECIPES.md](RECIPES.md) § State and layout, § Text that other parts follow.
 
-## Output
+### 5. Pick the motion for each part
 
-- Render with `--timeout=120000`: Google Fonts can exceed the default 30s headlessly.
-- Name renders `<video>-v<N>-4k.mp4`. Never overwrite a version the user asked to keep: bump `N`.
-- Run compose-audit before telling the user the video is done.
+| The part is… | Duration | Curve | How |
+| --- | --- | --- | --- |
+| Leaving | 0.75s (`EXIT`) | `IN_OUT` | `fade(1 - t)` |
+| Arriving | 0.6s (`SWAP`) | `SOFT` | `fade(t)` |
+| Swapping in place (title, label) | 0.6s | `IN_OUT` | crossfade two `fade()`s |
+| Moving or resizing | 1.0–1.3s | `IN_OUT` | `mix()` positions |
+| Changing weight | 1.2s | `IN_OUT` | tween `fontWeight` on `INTER_VAR` |
+| Constant (spinner, shimmer) | — | linear | frame clock |
+
+- **Never leave on `SOFT`.** An ease-out curve is fastest on its first frame, so the part blinks off.
+- **Never scale to 0.** `fade()` stops at 0.97 with a 2.5px blur: a part shrinking to nothing reads as a bug.
+- **Fade, then close.** When a part's space closes after it, start closing 0.25s after the fade starts. Closing over visible text clips it.
+- **Text scales from its first letter** (`origin: "left center"`), so it doesn't drift sideways.
+
+### 6. Show the states that only exist in motion
+
+- **Progress text:** crossfade the product's real stage strings, ~1.4s each, during the step whose note explains them. Then return to the resting title. ([RECIPES.md](RECIPES.md) § Title track.)
+- **Hover-only UI:** show it, and write "shown on hover" in its note.
+- **The finished flow:** after the last change, run the new component once through working → done, then settle it back to rest for the close.
+
+### 7. Write the notes
+
+- `HandNote` or `Callout`, one per step, ≤8 words, in the reviewer's terms. Use the user's exact wording when given.
+- Place each note from `layout` at the moment it starts, never the current frame. ([RECIPES.md](RECIPES.md) § Notes.)
+- Spacing changes: a ticked dimension line plus the px value.
+- Timing comes from `compose-timing`: each note is held ≥3s once written.
+
+### 8. Close on before and after
+
+Both designs stacked, old above new, in the same state with the same data. "Before" and "After" are handwritten, left-aligned with the cards, with no subtitles. The new component glides down into place while the old one fades in above. ([RECIPES.md](RECIPES.md) § Before/after close.)
+
+### 9. Render and hand off
+
+```bash
+npx remotion render <Composition> out/<video>-v<N>-4k.mp4 --timeout=120000
+```
+
+The 120s timeout is needed: Google Fonts can exceed the default 30s headlessly. Then run `compose-audit` before telling the user it's done.
+
+## Invocation Variants
+
+| Invocation | Behavior |
+| --- | --- |
+| bare | Initial Response, then wait |
+| a component and two refs | Full sequence, steps 1–9 |
+| `plan` + component | Steps 2–3 only: list the changes and their order, write no code |
+| a single change ("make the badge slide in from the left") | Edit the existing composition: steps 4–7 for that part only, then re-render |
+| `close` | Add or rebuild the before/after close (step 8) |
