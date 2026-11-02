@@ -7,12 +7,12 @@ You changed a component on your branch. These skills let your agent make a 4K vi
 ## Install
 
 ```bash
-npx git+ssh://git@github.com/yashsehgal/compose-video.git
+npx github:yashsehgal/compose-video
 ```
 
 This installs all five skills into `~/.claude/skills/`. Start a new Claude Code session to pick them up.
 
-> This repo is private. npx clones it over SSH, so you need access to the repo and an SSH key added to your GitHub account (check with `ssh -T git@github.com`).
+> This repo is private. npx clones it with your own git credentials, so you need access to the repo and an SSH key on your GitHub account (check with `ssh -T git@github.com`). If the short form fails, use the full one: `npx git+ssh://git@github.com/yashsehgal/compose-video.git`.
 
 | Option | Does |
 | --- | --- |
@@ -23,10 +23,10 @@ This installs all five skills into `~/.claude/skills/`. Start a new Claude Code 
 
 ```bash
 # Update to the latest version
-npx git+ssh://git@github.com/yashsehgal/compose-video.git --force
+npx github:yashsehgal/compose-video --force
 
 # Only the audit skill, for this project
-npx git+ssh://git@github.com/yashsehgal/compose-video.git --project --skill compose-audit
+npx github:yashsehgal/compose-video --project --skill compose-audit
 ```
 
 Without npx:

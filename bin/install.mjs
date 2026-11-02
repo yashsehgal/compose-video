@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 // Installs the compose-video skills into Claude Code's skills folder.
 //
-//   npx git+ssh://git@github.com/yashsehgal/compose-video.git            all skills, for every project
-//   npx git+ssh://git@github.com/yashsehgal/compose-video.git --project  into ./.claude/skills
-//   ... --skill compose-audit --skill compose-sounds                     only these
-//   ... --list                                                            list the skills, install nothing
-//   ... --force                                                           replace skills already installed
+//   npx github:yashsehgal/compose-video            all skills, for every project
+//   npx github:yashsehgal/compose-video --project  into ./.claude/skills
+//   ... --skill compose-audit --skill compose-sounds  only these
+//   ... --list                                      list the skills, install nothing
+//   ... --force                                     replace skills already installed
 
 import { cpSync, existsSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { homedir } from "node:os";
