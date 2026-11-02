@@ -12,7 +12,7 @@ npx github:yashsehgal/compose-video
 
 This installs all five skills into `~/.claude/skills/`. Start a new Claude Code session to pick them up.
 
-> This repo is private. npx clones it with your own git credentials, so you need access to the repo and an SSH key on your GitHub account (check with `ssh -T git@github.com`). If the short form fails, use the full one: `npx git+ssh://git@github.com/yashsehgal/compose-video.git`.
+Needs Node.js 18 or later. Nothing is published to the npm registry: npx downloads this repo from GitHub and runs its installer.
 
 | Option | Does |
 | --- | --- |
@@ -32,7 +32,7 @@ npx github:yashsehgal/compose-video --project --skill compose-audit
 Without npx:
 
 ```bash
-git clone git@github.com:yashsehgal/compose-video.git
+git clone https://github.com/yashsehgal/compose-video.git
 cp -R compose-video/skills/* ~/.claude/skills/
 ```
 
