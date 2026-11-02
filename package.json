@@ -2,6 +2,7 @@
   "name": "compose-video",
   "version": "1.0.0",
   "description": "Claude Code skills for Remotion component breakdown videos: animate, timing, sounds, cleanup, audit",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "bin": {

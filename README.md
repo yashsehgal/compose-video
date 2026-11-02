@@ -167,3 +167,7 @@ Each `SKILL.md` has the same sections:
 - **Invocation Variants**
 
 Precise values and long examples live in an uppercase file next to it: `SETUP.md`, `RECIPES.md`, `CATALOG.md` or `STANDARDS.md`.
+
+## License
+
+[MIT](./LICENSE)
